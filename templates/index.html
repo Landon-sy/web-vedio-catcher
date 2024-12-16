@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilibili视频下载器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-2">Bilibili视频下载器</h1>
+        <p class="text-gray-600 text-center mb-8">输入B站视频链接，支持批量下载</p>
+
+        <div class="max-w-7xl mx-auto bg-white rounded-lg shadow-md p-6 mb-8">
+            <textarea 
+                id="urls"
+                class="w-full h-32 p-2 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="请输入B站视频链接，每行一个..."
+            ></textarea>
+            <button 
+                onclick="downloadVideos()"
+                class="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-200"
+            >
+                开始下载
+            </button>
+        </div>
+
+        <div id="progress" class="hidden max-w-2xl mx-auto bg-white rounded-lg shadow-md p-4 mb-8">
+            <div class="flex items-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mr-3"></div>
+                <span>正在下载中...</span>
+            </div>
+        </div>
+
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold mb-4">已下载视频</h2>
+            <div id="videoList" class="grid gap-4">
+                {% for video in videos %}
+                <div class="bg-white rounded-lg shadow-md p-4">
+                    <h3 class="font-bold mb-2">{{ video.title }}</h3>
+                    <div class="aspect-w-16 aspect-h-9 mb-2">
+                        <video controls class="rounded">
+                            <source src="{{ video.filepath }}" type="video/mp4">
+                        </video>
+                    </div>
+                    <p class="text-gray-600">文件大小: {{ video.filesize }}</p>
+                    <p class="text-gray-600">存储路径: {{ video.filepath }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function downloadVideos() {
+            const urls = document.getElementById('urls').value;
+            console.log('准备下载URL:', urls);  // 添加日志
+            
+            if (!urls.trim()) {
+                alert('请输入视频链接！');
+                return;
+            }
+
+            const progress = document.getElementById('progress');
+            progress.classList.remove('hidden');
+
+            try {
+                console.log('发送下载请求...');  // 添加日志
+                const response = await fetch('/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ urls: urls })
+                });
+
+                const results = await response.json();
+                console.log('服务器返回结果:', results);  // 添加日志
+
+                if (!Array.isArray(results)) {
+                    console.log('转换结果为数组');  // 添加日志
+                    results = [results];
+                }
+
+                const errors = results.filter(r => r.error).map(r => r.error);
+                if (errors.length > 0) {
+                    console.error('下载错误:', errors);  // 添加日志
+                    alert('下载出现错误：\n' + errors.join('\n'));
+                } else {
+                    console.log('下载成功，准备刷新页面');  // 添加日志
+                    alert('下载完成！');
+                    location.reload();
+                }
+            } catch (error) {
+                console.error('下载过程出错:', error);  // 添加日志
+                alert('下载失败：' + error);
+            } finally {
+                progress.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html> 

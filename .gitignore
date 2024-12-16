@@ -1,0 +1,6 @@
+﻿downloads/*
+!downloads/.gitkeep
+__pycache__/
+*.pyc
+*.log
+cookies.txt
